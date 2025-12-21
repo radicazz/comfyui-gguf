@@ -1,49 +1,81 @@
-# ComfyUI-GGUF
-GGUF Quantization support for native ComfyUI models
+# ComfyUI-GGUF for AirPods
 
-This is currently very much WIP. These custom nodes provide support for model files stored in the GGUF format popularized by [llama.cpp](https://github.com/ggerganov/llama.cpp).
+GGUF quantization support for ComfyUI, forked and customized for integration with the [radicazz/airpods](https://github.com/radicazz/airpods) project.
 
-While quantization wasn't feasible for regular UNET models (conv2d), transformer/DiT models such as flux seem less affected by quantization. This allows running it in much lower bits per weight variable bitrate quants on low-end GPUs. For further VRAM savings, a node to load a quantized version of the T5 text encoder is also included.
+## What is this?
 
-![Comfy_Flux1_dev_Q4_0_GGUF_1024](https://github.com/user-attachments/assets/70d16d97-c522-4ef4-9435-633f128644c8)
+This fork provides custom nodes for loading GGUF-quantized models in ComfyUI. Instead of loading full-precision models that consume 16-24GB+ of VRAM, you can use quantized versions that run efficiently on lower-end GPUs with significantly reduced memory footprint.
 
-Note: The "Force/Set CLIP Device" is **NOT** part of this node pack. Do not install it if you only have one GPU. Do not set it to cuda:0 then complain about OOM errors if you do not undestand what it is for. There is not need to copy the workflow above, just use your own workflow and replace the stock "Load Diffusion Model" with the "Unet Loader (GGUF)" node.
+**Key benefits:**
+- 4-8x smaller model files via quantization
+- 50-75% VRAM reduction compared to full models
+- Support for transformer-based models like Flux, Stable Diffusion 3.5, and others
+- T5 text encoder quantization included for additional VRAM savings
 
 ## Installation
 
 > [!IMPORTANT]  
-> Make sure your ComfyUI is on a recent-enough version to support custom ops when loading the UNET-only.
+> Ensure your ComfyUI version supports custom ops for UNET loading.
 
-To install the custom node normally, git clone this repository into your custom nodes folder (`ComfyUI/custom_nodes`) and install the only dependency for inference (`pip install --upgrade gguf`)
+### Standard Installation
 
-```
-git clone https://github.com/city96/ComfyUI-GGUF
-```
-
-To install the custom node on a standalone ComfyUI release, open a CMD inside the "ComfyUI_windows_portable" folder (where your `run_nvidia_gpu.bat` file is) and use the following commands:
-
-```
-git clone https://github.com/city96/ComfyUI-GGUF ComfyUI/custom_nodes/ComfyUI-GGUF
-.\python_embeded\python.exe -s -m pip install -r .\ComfyUI\custom_nodes\ComfyUI-GGUF\requirements.txt
+```bash
+cd ComfyUI/custom_nodes
+git clone https://github.com/radicazz/comfyui-gguf
+cd comfyui-gguf
+pip install -r requirements.txt
 ```
 
-On MacOS sequoia, torch 2.4.1 seems to be required, as 2.6.X nightly versions cause a "M1 buffer is not large enough" error. See [this issue](https://github.com/city96/ComfyUI-GGUF/issues/107) for more information/workarounds.
+### Windows Standalone ComfyUI
 
-## Usage
+From your `ComfyUI_windows_portable` folder:
 
-Simply use the GGUF Unet loader found under the `bootleg` category. Place the .gguf model files in your `ComfyUI/models/unet` folder.
+```bash
+git clone https://github.com/radicazz/comfyui-gguf ComfyUI/custom_nodes/comfyui-gguf
+.\python_embeded\python.exe -s -m pip install -r .\ComfyUI\custom_nodes\comfyui-gguf\requirements.txt
+```
 
-LoRA loading is experimental but it should work with just the built-in LoRA loader node(s).
+### macOS Note
 
-Pre-quantized models:
+On macOS Sequoia, use torch 2.4.1 (2.6.X nightly can cause buffer errors). See the [original repo issues](https://github.com/city96/ComfyUI-GGUF/issues/107) for workarounds.
 
-- [flux1-dev GGUF](https://huggingface.co/city96/FLUX.1-dev-gguf)
-- [flux1-schnell GGUF](https://huggingface.co/city96/FLUX.1-schnell-gguf)
-- [stable-diffusion-3.5-large GGUF](https://huggingface.co/city96/stable-diffusion-3.5-large-gguf)
-- [stable-diffusion-3.5-large-turbo GGUF](https://huggingface.co/city96/stable-diffusion-3.5-large-turbo-gguf)
+## Quick Start
 
-Initial support for quantizing T5 has also been added recently, these can be used using the various `*CLIPLoader (gguf)` nodes which can be used inplace of the regular ones. For the CLIP model, use whatever model you were using before for CLIP. The loader can handle both types of files - `gguf` and regular `safetensors`/`bin`.
+1. **Place quantized models** in `ComfyUI/models/unet/` (`.gguf` files)
+2. **Use the GGUF loader nodes** from the `bootleg` category in your workflows
+3. **Load CLIP/T5 encoders** using `CLIPLoader (GGUF)` nodes for additional VRAM savings
 
-- [t5_v1.1-xxl GGUF](https://huggingface.co/city96/t5-v1_1-xxl-encoder-gguf)
+## Getting Quantized Models
 
-See the instructions in the [tools](https://github.com/city96/ComfyUI-GGUF/tree/main/tools) folder for how to create your own quants.
+Pre-quantized models available from the original project:
+
+- [Flux 1.0 dev](https://huggingface.co/city96/FLUX.1-dev-gguf) (Q4, Q6, Q8 variants)
+- [Flux 1.0 schnell](https://huggingface.co/city96/FLUX.1-schnell-gguf)
+- [Stable Diffusion 3.5 large](https://huggingface.co/city96/stable-diffusion-3.5-large-gguf)
+- [Stable Diffusion 3.5 turbo](https://huggingface.co/city96/stable-diffusion-3.5-large-turbo-gguf)
+- [T5 v1.1-xxl encoder](https://huggingface.co/city96/t5-v1_1-xxl-encoder-gguf)
+
+Recommended starting point: **Q4 or Q6** quantization for best quality/speed tradeoff on consumer GPUs.
+
+## Quantization Guide
+
+To create your own quantized models, see the [`tools/` folder](./tools) for conversion scripts.
+
+## About This Fork
+
+This is an active fork of [city96/ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) adapted for the AirPods project workflow. See [`AGENTS.md`](./AGENTS.md) for branch structure and development guidelines.
+
+**Branch info:**
+- `main` — Upstream tracking (kept clean)
+- `airpods` — Active development (default branch)
+
+## Upstream Reference
+
+- Original repo: [city96/ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF)
+- GGUF format: [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- ComfyUI framework: [comfyanonymous/ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+- GGUF spec: [ggerganov/ggml](https://github.com/ggerganov/ggml)
+
+## License
+
+Apache 2.0 (inherited from upstream)
