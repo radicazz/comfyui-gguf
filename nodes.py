@@ -41,6 +41,26 @@ def resolve_full_path(name, keys):
     return None
 
 
+# ComfyUI frontend expects a config dict for dropdowns in newer builds.
+def _dropdown(values, default=None):
+    values = list(values)
+    if default is None:
+        default = values[0] if values else ""
+    return (values, {"default": default})
+
+
+def _ensure_dropdown(spec, default=None):
+    if isinstance(spec, tuple):
+        if len(spec) >= 2 and isinstance(spec[1], dict):
+            return spec
+        if len(spec) == 1 and isinstance(spec[0], (list, tuple)):
+            return _dropdown(spec[0], default)
+        return spec
+    if isinstance(spec, list):
+        return _dropdown(spec, default)
+    return spec
+
+
 # Add a custom keys for files ending in .gguf
 update_folder_names_and_paths("unet_gguf", ["diffusion_models", "unet"])
 update_folder_names_and_paths("clip_gguf", ["text_encoders", "clip"])
@@ -164,7 +184,7 @@ class UnetLoaderGGUF:
         unet_names = [x for x in folder_paths.get_filename_list("unet_gguf")]
         return {
             "required": {
-                "unet_name": (unet_names,),
+                "unet_name": _dropdown(unet_names),
             }
         }
 
@@ -216,7 +236,7 @@ class UnetLoaderGGUFAdvanced(UnetLoaderGGUF):
         unet_names = [x for x in folder_paths.get_filename_list("unet_gguf")]
         return {
             "required": {
-                "unet_name": (unet_names,),
+                "unet_name": _dropdown(unet_names),
                 "dequant_dtype": (
                     ["default", "target", "float32", "float16", "bfloat16"],
                     {"default": "default"},
@@ -238,8 +258,8 @@ class CLIPLoaderGGUF:
         base = nodes.CLIPLoader.INPUT_TYPES()
         return {
             "required": {
-                "clip_name": (s.get_filename_list(),),
-                "type": base["required"]["type"],
+                "clip_name": _dropdown(s.get_filename_list()),
+                "type": _ensure_dropdown(base["required"]["type"]),
             }
         }
 
@@ -307,12 +327,12 @@ class DualCLIPLoaderGGUF(CLIPLoaderGGUF):
     @classmethod
     def INPUT_TYPES(s):
         base = nodes.DualCLIPLoader.INPUT_TYPES()
-        file_options = (s.get_filename_list(),)
+        file_options = _dropdown(s.get_filename_list())
         return {
             "required": {
                 "clip_name1": file_options,
                 "clip_name2": file_options,
-                "type": base["required"]["type"],
+                "type": _ensure_dropdown(base["required"]["type"]),
             }
         }
 
@@ -335,7 +355,7 @@ class DualCLIPLoaderGGUF(CLIPLoaderGGUF):
 class TripleCLIPLoaderGGUF(CLIPLoaderGGUF):
     @classmethod
     def INPUT_TYPES(s):
-        file_options = (s.get_filename_list(),)
+        file_options = _dropdown(s.get_filename_list())
         return {
             "required": {
                 "clip_name1": file_options,
@@ -366,7 +386,7 @@ class TripleCLIPLoaderGGUF(CLIPLoaderGGUF):
 class QuadrupleCLIPLoaderGGUF(CLIPLoaderGGUF):
     @classmethod
     def INPUT_TYPES(s):
-        file_options = (s.get_filename_list(),)
+        file_options = _dropdown(s.get_filename_list())
         return {
             "required": {
                 "clip_name1": file_options,
