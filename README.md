@@ -45,6 +45,13 @@ On macOS Sequoia, use torch 2.4.1 (2.6.X nightly can cause buffer errors). See t
 2. **Use the GGUF loader nodes** from the `bootleg` category in your workflows
 3. **Load CLIP/T5 encoders** using `CLIPLoader (GGUF)` nodes for additional VRAM savings
 
+## Workflow Templates
+
+ComfyUI picks up templates from `example_workflows/` and shows them under "Browse Templates".
+Start with:
+- `example_workflows/flux-dev-gguf-simple.json`
+- `example_workflows/flux-dev-gguf-simple.toml`
+
 ## Getting Quantized Models
 
 Pre-quantized models available from the original project:
